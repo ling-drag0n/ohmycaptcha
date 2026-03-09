@@ -45,8 +45,8 @@
 | 能力 | 详情 |
 |------|------|
 | **浏览器自动化** | Playwright + Chromium 实现 reCAPTCHA v2/v3、hCaptcha、Cloudflare Turnstile 自动求解 |
-| **图片识别** | OpenAI-compatible 多模态模型 (qwen3.5-2b) 进行图片验证码分析 |
-| **图像分类** | 基于视觉模型的 HCaptcha、reCAPTCHA v2、FunCaptcha、AWS 网格分类 |
+| **图片识别** | 本地多模态模型（通过 SGLang 部署 Qwen3.5-2B）进行图片验证码分析 |
+| **图像分类** | 本地视觉模型进行 HCaptcha、reCAPTCHA v2、FunCaptcha、AWS 网格分类 |
 | **API 兼容** | 完整的 YesCaptcha `createTask`/`getTaskResult`/`getBalance` 协议 |
 | **部署方式** | 支持本地、Render、Hugging Face Spaces 的 Docker 部署 |
 
@@ -59,12 +59,16 @@ python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 playwright install --with-deps chromium
 
-export CLIENT_KEY="your-client-key"
-export CAPTCHA_BASE_URL="https://your-openai-compatible-endpoint/v1"
-export CAPTCHA_API_KEY="your-api-key"
-export CAPTCHA_MODEL="gpt-5.4"
-export CAPTCHA_MULTIMODAL_MODEL="qwen3.5-2b"
+# 本地模型（通过 SGLang 自托管部署）
+export LOCAL_BASE_URL="http://localhost:30000/v1"
+export LOCAL_MODEL="Qwen/Qwen3.5-2B"
 
+# 云端模型（远程 API）
+export CLOUD_BASE_URL="https://your-openai-compatible-endpoint/v1"
+export CLOUD_API_KEY="your-api-key"
+export CLOUD_MODEL="gpt-5.4"
+
+export CLIENT_KEY="your-client-key"
 python main.py
 ```
 
@@ -208,13 +212,24 @@ curl -X POST http://localhost:8000/getTaskResult \
 
 ## ⚙️ 配置项
 
+### 模型后端
+
+OhMyCaptcha 使用两种模型后端 —— **本地模型**处理图像任务，**云端模型**处理复杂推理：
+
+| 变量 | 说明 | 默认值 |
+|------|------|--------|
+| `LOCAL_BASE_URL` | 本地推理服务地址（SGLang/vLLM） | `http://localhost:30000/v1` |
+| `LOCAL_API_KEY` | 本地服务密钥 | `EMPTY` |
+| `LOCAL_MODEL` | 本地模型名称 | `Qwen/Qwen3.5-2B` |
+| `CLOUD_BASE_URL` | 云端 API 基地址 | 外部端点 |
+| `CLOUD_API_KEY` | 云端 API 密钥 | 未设置 |
+| `CLOUD_MODEL` | 云端模型名称 | `gpt-5.4` |
+
+### 通用
+
 | 变量 | 说明 | 默认值 |
 |------|------|--------|
 | `CLIENT_KEY` | 客户端认证密钥 | 未设置 |
-| `CAPTCHA_BASE_URL` | OpenAI-compatible API 基地址 | `https://your-openai-compatible-endpoint/v1` |
-| `CAPTCHA_API_KEY` | 模型接口密钥 | 未设置 |
-| `CAPTCHA_MODEL` | 强模型名称 | `gpt-5.4` |
-| `CAPTCHA_MULTIMODAL_MODEL` | 多模态模型名称 | `qwen3.5-2b` |
 | `CAPTCHA_RETRIES` | 重试次数 | `3` |
 | `CAPTCHA_TIMEOUT` | 模型请求超时（秒） | `30` |
 | `BROWSER_HEADLESS` | 无头浏览器 | `true` |
@@ -222,10 +237,13 @@ curl -X POST http://localhost:8000/getTaskResult \
 | `SERVER_HOST` | 监听地址 | `0.0.0.0` |
 | `SERVER_PORT` | 监听端口 | `8000` |
 
+> 旧版变量（`CAPTCHA_BASE_URL`、`CAPTCHA_API_KEY`、`CAPTCHA_MODEL`、`CAPTCHA_MULTIMODAL_MODEL`）仍支持作为回退。
+
 ---
 
 ## 🚀 部署
 
+- [本地模型 (SGLang)](https://shenhao-stu.github.io/ohmycaptcha/zh/deployment/local-model/) — 本地部署 Qwen3.5-2B
 - [Render 部署](https://shenhao-stu.github.io/ohmycaptcha/zh/deployment/render/)
 - [Hugging Face Spaces 部署](https://shenhao-stu.github.io/ohmycaptcha/zh/deployment/huggingface/)
 - [完整文档](https://shenhao-stu.github.io/ohmycaptcha/)

@@ -1,66 +1,61 @@
 ---
 name: ohmycaptcha
-description: Use this skill whenever the user wants to deploy, configure, validate, or integrate the OhMyCaptcha service, especially for YesCaptcha-style APIs, flow2api integration, reCAPTCHA v3 task creation, ImageToTextTask usage, Render deployment, Hugging Face Spaces deployment, GitHub Pages docs, or OpenAI-compatible multimodal model setup. Also use it when the user asks how to self-host a captcha-solving service or wants exact request/response examples for OhMyCaptcha.
+description: Deploy, configure, validate, and integrate the OhMyCaptcha captcha-solving service. Use when working with YesCaptcha-style APIs, flow2api integration, reCAPTCHA/hCaptcha/Turnstile task creation, image classification, SGLang local model deployment, Render/Hugging Face cloud deployment, or OpenAI-compatible multimodal model setup. Also use when the user asks how to self-host a captcha-solving service or wants request/response examples for OhMyCaptcha.
 ---
 
 # OhMyCaptcha Skill
 
-Use this skill to help users work with the OhMyCaptcha repository and service in a consistent, documentation-backed way.
+Operational guidance for deploying and integrating the OhMyCaptcha service.
 
-## What this skill covers
+## Model architecture
 
-- local development and startup
-- environment variable setup
-- YesCaptcha-style endpoint usage
-- flow2api integration guidance
-- reCAPTCHA v3 task examples
-- `ImageToTextTask` examples
-- Render deployment
-- Hugging Face Spaces deployment
-- GitHub Pages documentation references
+OhMyCaptcha uses two model backends:
 
-## How to respond
+- **Local model** — self-hosted via SGLang/vLLM (e.g. `Qwen/Qwen3.5-2B`). Handles image recognition and classification tasks. Configured via `LOCAL_BASE_URL`, `LOCAL_API_KEY`, `LOCAL_MODEL`.
+- **Cloud model** — remote OpenAI-compatible API (e.g. `gpt-5.4`). Handles audio transcription and complex reasoning. Configured via `CLOUD_BASE_URL`, `CLOUD_API_KEY`, `CLOUD_MODEL`.
+
+## Supported task types (19 total)
+
+### Browser-based (12)
+`RecaptchaV3TaskProxyless`, `RecaptchaV3TaskProxylessM1`, `RecaptchaV3TaskProxylessM1S7`, `RecaptchaV3TaskProxylessM1S9`, `RecaptchaV3EnterpriseTask`, `RecaptchaV3EnterpriseTaskM1`, `NoCaptchaTaskProxyless`, `RecaptchaV2TaskProxyless`, `RecaptchaV2EnterpriseTaskProxyless`, `HCaptchaTaskProxyless`, `TurnstileTaskProxyless`, `TurnstileTaskProxylessM1`
+
+### Image recognition (3)
+`ImageToTextTask`, `ImageToTextTaskMuggle`, `ImageToTextTaskM1`
+
+### Image classification (4)
+`HCaptchaClassification`, `ReCaptchaV2Classification`, `FunCaptchaClassification`, `AwsClassification`
+
+## Local model setup (SGLang)
+
+```bash
+pip install "sglang[all]>=0.4.6.post1"
+# From ModelScope (China):
+export SGLANG_USE_MODELSCOPE=true
+python -m sglang.launch_server --model-path Qwen/Qwen3.5-2B --port 30000
+```
+
+Then configure OhMyCaptcha:
+```bash
+export LOCAL_BASE_URL="http://localhost:30000/v1"
+export LOCAL_MODEL="Qwen/Qwen3.5-2B"
+```
+
+## Startup checklist
+
+1. Install dependencies: `pip install -r requirements.txt && playwright install --with-deps chromium`
+2. Start local model server (SGLang on port 30000)
+3. Set env vars: `LOCAL_BASE_URL`, `CLOUD_BASE_URL`, `CLOUD_API_KEY`, `CLIENT_KEY`
+4. Start service: `python main.py`
+5. Verify: `curl http://localhost:8000/api/v1/health`
+6. Test: create a reCAPTCHA v3 task against `https://antcpt.com/score_detector/` with key `6LcR_okUAAAAAPYrPe-HK_0RULO1aZM15ENyM-Mf`
+
+## Response rules
 
 1. Prefer the repository's documented behavior over assumptions.
-2. Keep examples aligned with the implemented task types only.
-3. Use placeholder credentials only. Never invent or expose real secrets.
-4. Be explicit about limitations:
-   - `minScore` is compatibility-only in the current implementation
-   - task storage is in-memory
-   - `ImageToTextTask` returns structured data serialized in `solution.text`
-5. If the user asks for deployment help, guide them toward:
-   - `docs/deployment/render.md`
-   - `docs/deployment/huggingface.md`
-6. If the user asks for API usage, provide exact request/response examples consistent with:
-   - `docs/api-reference.md`
-   - `docs/usage/recaptcha-v3.md`
-   - `docs/usage/image-captcha.md`
-
-## Supported task types
-
-Always describe these as the current implemented task types:
-
-- `RecaptchaV3TaskProxyless`
-- `RecaptchaV3TaskProxylessM1`
-- `RecaptchaV3TaskProxylessM1S7`
-- `RecaptchaV3TaskProxylessM1S9`
-- `ImageToTextTask`
-
-## Deployment checklist
-
-When helping with deployment, cover these items in order:
-
-1. install dependencies
-2. install Playwright Chromium
-3. configure environment variables
-4. start the service
-5. verify `/` and `/api/v1/health`
-6. create a detector task against `https://antcpt.com/score_detector/`
-7. poll `/getTaskResult`
-
-## Output style
-
-- Be concise and implementation-aware.
-- Prefer copy-pasteable commands.
-- Link to relevant docs paths when helpful.
-- Keep the tone calm and operational.
+2. Use placeholder credentials only. Never expose real secrets.
+3. Be explicit about limitations:
+   - `minScore` is compatibility-only
+   - Task storage is in-memory with 10-min TTL
+   - reCAPTCHA v2 and hCaptcha may require image classification fallback in headless environments
+4. For deployment help, reference `docs/deployment/local-model.md`, `docs/deployment/render.md`, `docs/deployment/huggingface.md`.
+5. For API usage, reference `docs/api-reference.md` and the usage guides under `docs/usage/`.

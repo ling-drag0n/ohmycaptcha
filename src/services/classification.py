@@ -91,8 +91,8 @@ class ClassificationSolver:
     def __init__(self, config: Config) -> None:
         self._config = config
         self._client = AsyncOpenAI(
-            base_url=config.captcha_base_url,
-            api_key=config.captcha_api_key,
+            base_url=config.local_base_url,
+            api_key=config.local_api_key,
         )
 
     async def solve(self, params: dict[str, Any]) -> dict[str, Any]:

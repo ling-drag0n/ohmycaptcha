@@ -1,46 +1,42 @@
 ---
 name: ohmycaptcha-image
-description: Use this skill whenever the user wants to create product visuals, README banners, documentation illustrations, deployment diagrams, or marketing-style images for OhMyCaptcha or related captcha infrastructure. Also use it when the user asks for OpenAI-compatible image generation workflows, wants to create repository art for Claude Code or OpenCode projects, or needs a reusable local workflow for generating public-safe project images.
+description: Generate product visuals, README banners, documentation illustrations, and architecture diagrams for OhMyCaptcha. Use when the user asks for repository art, hero images, deployment diagrams, or marketing visuals for captcha infrastructure projects.
 ---
 
 # OhMyCaptcha Image Skill
 
-Use this skill to generate clean, public-safe visuals for the OhMyCaptcha repository and documentation.
+Generate clean, public-safe visuals for the OhMyCaptcha repository and documentation.
 
-## What this skill is for
+## Use cases
 
 - README hero images
-- documentation illustrations
-- deployment diagrams rendered as polished concept art
-- architecture visuals for GitHub Pages or docs
-- launch graphics for Claude Code, OpenCode, or similar agent-oriented workflows
+- Documentation illustrations
+- Architecture diagrams
+- Deployment flow visuals
 
 ## Principles
 
 1. Keep visuals product-oriented and privacy-safe.
-2. Never embed real tokens, private URLs, customer names, or user data in prompts or generated images.
-3. Prefer abstract infrastructure visuals, browser automation motifs, API flows, and security-themed UI compositions.
-4. Keep style directions explicit: clean, modern, technical, minimal, open-source-friendly.
-5. If the image will be committed to the repository, prefer landscape ratios that work in README files.
+2. Never embed real tokens, private URLs, or customer data.
+3. Prefer abstract infrastructure motifs: browser automation, API flows, tokens, multimodal vision, cloud deployment.
+4. Style: polished, modern, minimal, open-source-friendly.
+5. For README visuals, use 16:9 landscape ratio.
 
-## Prompting guidance
+## Prompting template
 
-Include:
-
-- subject: OhMyCaptcha as a self-hostable captcha-solving service
-- motifs: browser automation, API requests, tokens, multimodal vision, docs, dashboards, cloud deployment
-- style: polished, modern, minimal, trustworthy, open-source
-- constraints: no secrets, no logos you do not own, no text that looks like a real key or token
-
-## Output recommendations
-
-For README visuals, prefer:
-
-- 16:9 or wide landscape composition
-- dark or neutral background
-- cyan / blue / indigo accents
-- enough empty space for cropping if needed
+Include in every image prompt:
+- **Subject**: OhMyCaptcha as a self-hostable captcha-solving service
+- **Motifs**: browser automation, API requests (`/createTask`, `/getTaskResult`), reCAPTCHA/hCaptcha/Turnstile widgets, multimodal vision model, SGLang local deployment
+- **Style**: polished dark UI aesthetic with blue/indigo accents
+- **Constraints**: no secrets, no vendor logos, no text resembling real keys
 
 ## Example prompt
 
-Create a polished open-source hero illustration for a project called OhMyCaptcha, showing a modern self-hosted captcha-solving service with browser automation, API flows, multimodal vision, and cloud deployment motifs. Use a clean dark UI aesthetic with blue and indigo accents. Do not include any secrets, private URLs, or realistic tokens. No vendor logos.
+> Create a polished open-source hero illustration for OhMyCaptcha, showing a modern self-hosted captcha-solving pipeline with browser automation, API flow cards, a local SGLang model server, and cloud deployment badges. Dark UI with blue/indigo accents. No secrets or vendor logos.
+
+## Output recommendations
+
+- 16:9 or wide landscape composition
+- Dark or neutral background
+- Cyan / blue / indigo accent palette
+- Enough negative space for cropping

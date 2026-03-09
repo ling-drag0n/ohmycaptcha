@@ -70,8 +70,8 @@ def test_health_endpoint() -> None:
     assert response.status_code == 200
     body = response.json()
     assert body["status"] == "ok"
-    assert "captcha_model" in body
-    assert "captcha_multimodal_model" in body
+    assert "cloud_model" in body
+    assert "local_model" in body
 
 
 def test_root_endpoint() -> None:

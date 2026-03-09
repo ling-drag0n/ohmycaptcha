@@ -68,6 +68,7 @@ plugins:
             Image CAPTCHA: Image CAPTCHA
             Positioning: Positioning
             Deployment: Deployment
+            Local Model (SGLang): Local Model (SGLang)
             Render: Render
             Hugging Face Spaces: Hugging Face Spaces
             Agent Skill: Agent Skill
@@ -90,6 +91,7 @@ plugins:
             Image CAPTCHA: 图片验证码
             Positioning: 项目定位
             Deployment: 部署
+            Local Model (SGLang): 本地模型 (SGLang)
             Render: Render
             Hugging Face Spaces: Hugging Face Spaces
             Agent Skill: Agent Skill
@@ -124,6 +126,7 @@ nav:
       - Image CAPTCHA: usage/image-captcha.md
   - Positioning: positioning.md
   - Deployment:
+      - Local Model (SGLang): deployment/local-model.md
       - Render: deployment/render.md
       - Hugging Face Spaces: deployment/huggingface.md
   - Agent Skill: skill.md

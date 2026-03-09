@@ -95,8 +95,8 @@ class CaptchaRecognizer:
     def __init__(self, config: Config) -> None:
         self._config = config
         self._client = AsyncOpenAI(
-            base_url=config.captcha_base_url,
-            api_key=config.captcha_api_key,
+            base_url=config.local_base_url,
+            api_key=config.local_api_key,
         )
 
     async def recognize(self, image_bytes: bytes) -> dict[str, Any]:

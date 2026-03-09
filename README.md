@@ -45,8 +45,8 @@
 | Capability | Details |
 |-----------|---------|
 | **Browser automation** | Playwright + Chromium for reCAPTCHA v2/v3, hCaptcha, Cloudflare Turnstile |
-| **Image recognition** | OpenAI-compatible multimodal models (qwen3.5-2b) for image captcha analysis |
-| **Image classification** | Vision model-based classification for HCaptcha, reCAPTCHA v2, FunCaptcha, AWS grids |
+| **Image recognition** | Local multimodal model (Qwen3.5-2B via SGLang) for image captcha analysis |
+| **Image classification** | Local vision model for HCaptcha, reCAPTCHA v2, FunCaptcha, AWS grid classification |
 | **API compatibility** | Full YesCaptcha `createTask`/`getTaskResult`/`getBalance` protocol |
 | **Deployment** | Local, Render, Hugging Face Spaces with Docker support |
 
@@ -59,12 +59,16 @@ python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 playwright install --with-deps chromium
 
-export CLIENT_KEY="your-client-key"
-export CAPTCHA_BASE_URL="https://your-openai-compatible-endpoint/v1"
-export CAPTCHA_API_KEY="your-api-key"
-export CAPTCHA_MODEL="gpt-5.4"
-export CAPTCHA_MULTIMODAL_MODEL="qwen3.5-2b"
+# Local model (self-hosted via SGLang)
+export LOCAL_BASE_URL="http://localhost:30000/v1"
+export LOCAL_MODEL="Qwen/Qwen3.5-2B"
 
+# Cloud model (remote API)
+export CLOUD_BASE_URL="https://your-openai-compatible-endpoint/v1"
+export CLOUD_API_KEY="your-api-key"
+export CLOUD_MODEL="gpt-5.4"
+
+export CLIENT_KEY="your-client-key"
 python main.py
 ```
 
@@ -208,13 +212,24 @@ curl -X POST http://localhost:8000/getTaskResult \
 
 ## ⚙️ Configuration
 
+### Model backends
+
+OhMyCaptcha uses two model backends — a **local model** for image tasks and a **cloud model** for complex reasoning:
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `LOCAL_BASE_URL` | Local inference server (SGLang/vLLM) | `http://localhost:30000/v1` |
+| `LOCAL_API_KEY` | Local server API key | `EMPTY` |
+| `LOCAL_MODEL` | Local model name | `Qwen/Qwen3.5-2B` |
+| `CLOUD_BASE_URL` | Cloud API base URL | External endpoint |
+| `CLOUD_API_KEY` | Cloud API key | unset |
+| `CLOUD_MODEL` | Cloud model name | `gpt-5.4` |
+
+### General
+
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `CLIENT_KEY` | Client authentication key | unset |
-| `CAPTCHA_BASE_URL` | OpenAI-compatible API base URL | `https://your-openai-compatible-endpoint/v1` |
-| `CAPTCHA_API_KEY` | API key for model backend | unset |
-| `CAPTCHA_MODEL` | Strong model name | `gpt-5.4` |
-| `CAPTCHA_MULTIMODAL_MODEL` | Vision model name | `qwen3.5-2b` |
 | `CAPTCHA_RETRIES` | Retry count | `3` |
 | `CAPTCHA_TIMEOUT` | Model timeout (seconds) | `30` |
 | `BROWSER_HEADLESS` | Headless Chromium | `true` |
@@ -222,10 +237,13 @@ curl -X POST http://localhost:8000/getTaskResult \
 | `SERVER_HOST` | Bind host | `0.0.0.0` |
 | `SERVER_PORT` | Bind port | `8000` |
 
+> Legacy vars (`CAPTCHA_BASE_URL`, `CAPTCHA_API_KEY`, `CAPTCHA_MODEL`, `CAPTCHA_MULTIMODAL_MODEL`) are supported as fallbacks.
+
 ---
 
 ## 🚀 Deployment
 
+- [Local model (SGLang)](https://shenhao-stu.github.io/ohmycaptcha/deployment/local-model/) — deploy Qwen3.5-2B locally
 - [Render deployment](https://shenhao-stu.github.io/ohmycaptcha/deployment/render/)
 - [Hugging Face Spaces deployment](https://shenhao-stu.github.io/ohmycaptcha/deployment/huggingface/)
 - [Full documentation](https://shenhao-stu.github.io/ohmycaptcha/)
