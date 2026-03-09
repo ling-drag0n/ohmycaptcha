@@ -3,5 +3,5 @@ __pycache__/
 .pytest_cache/
 site/
 *.pyc
-
+cache/
 CLAUDE.md
