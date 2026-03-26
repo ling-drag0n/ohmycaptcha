@@ -77,7 +77,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         task_manager.register_solver(task_type, v2_solver)
     log.info("Registered reCAPTCHA v2 solver for types: %s", _RECAPTCHA_V2_TYPES)
 
-    hcaptcha_solver = HCaptchaSolver(config)
+    classifier = ClassificationSolver(config)
+
+    hcaptcha_solver = HCaptchaSolver(config, classifier=classifier)
     await hcaptcha_solver.start()
     for task_type in _HCAPTCHA_TYPES:
         task_manager.register_solver(task_type, hcaptcha_solver)
@@ -94,7 +96,6 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         task_manager.register_solver(task_type, recognizer)
     log.info("Registered image captcha recognizer for types: %s", _IMAGE_TEXT_TYPES)
 
-    classifier = ClassificationSolver(config)
     for task_type in _CLASSIFICATION_TYPES:
         task_manager.register_solver(task_type, classifier)
     log.info("Registered classification solver for types: %s", _CLASSIFICATION_TYPES)

@@ -2,6 +2,8 @@
 
 Image classification tasks send one or more captcha images to an OpenAI-compatible vision model and return the indices of matching cells or a boolean answer. No browser automation is involved — these are pure vision model API calls.
 
+For `HCaptchaClassification`, you can also pass optional sample images in `examples` when the widget shows reference thumbnails above the candidate tiles.
+
 ## Supported task types
 
 | Task type | Description |
@@ -36,6 +38,22 @@ Image classification tasks send one or more captcha images to an OpenAI-compatib
 ```
 
 The `queries` field accepts a list of base64-encoded images (one per grid cell). The `question` field is the challenge prompt displayed to the user.
+
+When hCaptcha provides reference thumbnails, include them in an optional `examples` field:
+
+```json
+{
+  "clientKey": "your-client-key",
+  "task": {
+    "type": "HCaptchaClassification",
+    "images": ["<candidate-0>", "<candidate-1>", "<candidate-2>"],
+    "examples": ["<sample-0>", "<sample-1>"],
+    "question": "Please click each image containing the same object as the sample image"
+  }
+}
+```
+
+`examples` are used only as references; returned indices still apply only to candidate images.
 
 ### Response
 

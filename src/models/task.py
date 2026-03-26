@@ -18,6 +18,7 @@ class TaskObject(BaseModel):
     body: str | None = None
     image: str | None = None
     images: list[str] | None = None
+    examples: list[str] | None = None
     question: str | None = None
     queries: list[str] | str | None = None
     project_name: str | None = None

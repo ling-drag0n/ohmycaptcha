@@ -75,7 +75,7 @@ Required fields: `body` (base64-encoded image).
 - `FunCaptchaClassification`
 - `AwsClassification`
 
-Required fields: `image` or `images` or `queries` (base64-encoded). Optional: `question`.
+Required fields: `image` or `images` or `queries` (base64-encoded). Optional: `question`, `examples` (reference thumbnails for `HCaptchaClassification`).
 
 ### Compatibility note on `minScore`
 

@@ -25,19 +25,25 @@ log = logging.getLogger(__name__)
 
 HCAPTCHA_SYSTEM_PROMPT = """\
 You are an image classification assistant for HCaptcha challenges.
-Given a question and one or more base64-encoded images, determine which images match the question.
+
+You may receive:
+1. optional sample/example images that show the target object, and
+2. one or more candidate captcha images that must be classified.
+
+Determine which candidate images match the question or the sample images.
 
 Return STRICT JSON only. No markdown, no extra text.
 
 For single-image questions (is this image X?):
 {"answer": true}  or  {"answer": false}
 
-For multi-image grid questions (select all images containing X):
+For multi-image selection questions:
 {"answer": [0, 2, 5]}
-where numbers are 0-indexed positions of matching images.
+where numbers are 0-indexed positions of matching candidate images.
 
 Rules:
 - Return ONLY the JSON object, nothing else.
+- Use example images only as references; do not include them in the returned indices.
 - Be precise with your classification.
 """
 
@@ -105,7 +111,17 @@ class ClassificationSolver:
         if not images:
             raise ValueError("No image data provided")
 
-        result = await self._classify(system_prompt, question, images)
+        examples = self._extract_examples(params)
+        log.info(
+            "Classification request: task_type=%s model=%s images=%d examples=%d question=%r",
+            task_type or "unknown",
+            self._config.captcha_multimodal_model,
+            len(images),
+            len(examples),
+            question[:120] if isinstance(question, str) else question,
+        )
+        result = await self._classify(system_prompt, question, images, examples=examples)
+        log.info("Classification parsed result: %s", result)
         return result
 
     @staticmethod
@@ -143,6 +159,15 @@ class ClassificationSolver:
         return images
 
     @staticmethod
+    def _extract_examples(params: dict[str, Any]) -> list[str]:
+        examples = params.get("examples")
+        if isinstance(examples, list):
+            return [item for item in examples if isinstance(item, str)]
+        if isinstance(examples, str):
+            return [examples]
+        return []
+
+    @staticmethod
     def _prepare_image(b64_data: str) -> str:
         """Ensure image is properly formatted as a data URL."""
         if b64_data.startswith("data:image"):
@@ -157,16 +182,54 @@ class ClassificationSolver:
             return f"data:image/png;base64,{b64_data}"
 
     async def _classify(
-        self, system_prompt: str, question: str, images: list[str]
+        self,
+        system_prompt: str,
+        question: str,
+        images: list[str],
+        *,
+        examples: list[str] | None = None,
     ) -> dict[str, Any]:
         content: list[dict[str, Any]] = []
 
+        prepared_examples = examples or []
+        if prepared_examples:
+            content.append(
+                {
+                    "type": "text",
+                    "text": (
+                        "Sample images showing the target object. "
+                        "Do not classify these; use them only as references."
+                    ),
+                }
+            )
+        for example_b64 in prepared_examples:
+            data_url = self._prepare_image(example_b64)
+            content.append(
+                {
+                    "type": "image_url",
+                    "image_url": {"url": data_url, "detail": "high"},
+                }
+            )
+
+        if len(images) > 1:
+            content.append(
+                {
+                    "type": "text",
+                    "text": (
+                        "Candidate images to classify. "
+                        "Indices are 0-based in display order."
+                    ),
+                }
+            )
+
         for img_b64 in images:
             data_url = self._prepare_image(img_b64)
-            content.append({
-                "type": "image_url",
-                "image_url": {"url": data_url, "detail": "high"},
-            })
+            content.append(
+                {
+                    "type": "image_url",
+                    "image_url": {"url": data_url, "detail": "high"},
+                }
+            )
 
         user_text = question if question else "Classify this captcha image."
         content.append({"type": "text", "text": user_text})
@@ -184,6 +247,7 @@ class ClassificationSolver:
                     ],
                 )
                 raw = response.choices[0].message.content or ""
+                log.info("Classification raw response: %s", raw[:300])
                 return self._parse_json(raw)
             except Exception as exc:
                 last_error = exc

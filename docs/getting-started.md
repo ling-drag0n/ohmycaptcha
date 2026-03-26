@@ -21,11 +21,13 @@ playwright install --with-deps chromium
 
 | Variable | Description | Default |
 | --- | --- | --- |
+| `LOCAL_BASE_URL` | Local / self-hosted OpenAI-compatible endpoint used for image classification | `http://localhost:30000/v1` |
+| `LOCAL_API_KEY` | API key for the local endpoint | `EMPTY` |
+| `LOCAL_MODEL` | Local multimodal model name | `Qwen/Qwen3.5-2B` |
+| `CLOUD_BASE_URL` | Remote OpenAI-compatible endpoint used for heavier reasoning tasks | `https://your-openai-compatible-endpoint/v1` |
+| `CLOUD_API_KEY` | API key for the remote endpoint | unset |
+| `CLOUD_MODEL` | Cloud model name | `gpt-5.4` |
 | `CLIENT_KEY` | Client auth key used as `clientKey` | unset |
-| `CAPTCHA_BASE_URL` | OpenAI-compatible API base URL | `https://your-openai-compatible-endpoint/v1` |
-| `CAPTCHA_API_KEY` | API key for your model provider | unset |
-| `CAPTCHA_MODEL` | Strong text model | `gpt-5.4` |
-| `CAPTCHA_MULTIMODAL_MODEL` | Multimodal model | `qwen3.5-2b` |
 | `CAPTCHA_RETRIES` | Retry count | `3` |
 | `CAPTCHA_TIMEOUT` | Model timeout in seconds | `30` |
 | `BROWSER_HEADLESS` | Run Chromium headless | `true` |
@@ -33,14 +35,37 @@ playwright install --with-deps chromium
 | `SERVER_HOST` | Bind host | `0.0.0.0` |
 | `SERVER_PORT` | Bind port | `8000` |
 
+> Legacy vars (`CAPTCHA_BASE_URL`, `CAPTCHA_API_KEY`, `CAPTCHA_MODEL`,
+> `CAPTCHA_MULTIMODAL_MODEL`) are still accepted as fallbacks, but
+> `LOCAL_*` / `CLOUD_*` take precedence when both are set.
+
 ## Start the service
 
 ```bash
+export LOCAL_BASE_URL="http://localhost:30000/v1"
+export LOCAL_API_KEY="EMPTY"
+export LOCAL_MODEL="Qwen/Qwen3.5-2B"
+
+export CLOUD_BASE_URL="https://your-openai-compatible-endpoint/v1"
+export CLOUD_API_KEY="your-api-key"
+export CLOUD_MODEL="gpt-5.4"
+
 export CLIENT_KEY="your-client-key"
-export CAPTCHA_BASE_URL="https://your-openai-compatible-endpoint/v1"
-export CAPTCHA_API_KEY="your-api-key"
-export CAPTCHA_MODEL="gpt-5.4"
-export CAPTCHA_MULTIMODAL_MODEL="qwen3.5-2b"
+python main.py
+```
+
+### Windows PowerShell example
+
+```powershell
+$env:LOCAL_BASE_URL = "http://localhost:30000/v1"
+$env:LOCAL_API_KEY = "EMPTY"
+$env:LOCAL_MODEL = "Qwen/Qwen3.5-2B"
+
+$env:CLOUD_BASE_URL = "https://your-openai-compatible-endpoint/v1"
+$env:CLOUD_API_KEY = "your-api-key"
+$env:CLOUD_MODEL = "gpt-5.4"
+
+$env:CLIENT_KEY = "your-client-key"
 python main.py
 ```
 
@@ -62,6 +87,10 @@ The health response should include the registered task types and current runtime
 
 ## Local and self-hosted model support
 
-The image recognition path is built around **OpenAI-compatible APIs**. In practice, this means you can point `CAPTCHA_BASE_URL` at a hosted provider or a self-hosted/local multimodal gateway, as long as it exposes compatible chat-completions semantics and supports image input.
+The image recognition / classification path is built around
+**OpenAI-compatible APIs**. In practice, this means you can point
+`LOCAL_BASE_URL` at a hosted provider or a self-hosted/local multimodal gateway,
+and `CLOUD_BASE_URL` at a separate stronger remote endpoint, as long as they
+expose compatible chat-completions semantics and support the inputs you need.
 
 The project intentionally documents this in generic compatibility terms rather than claiming full validation for every provider stack.

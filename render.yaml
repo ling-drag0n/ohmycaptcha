@@ -16,7 +16,7 @@ services:
       - key: CAPTCHA_MODEL
         value: "gpt-5.4"
       - key: CAPTCHA_MULTIMODAL_MODEL
-        value: "qwen3.5-2b"
+        value: "qwen3.5-plus"
       - key: CAPTCHA_RETRIES
         value: "3"
       - key: CAPTCHA_TIMEOUT

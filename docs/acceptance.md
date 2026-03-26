@@ -9,7 +9,7 @@ This page documents acceptance targets for each supported captcha type, includin
 | reCAPTCHA v3 | `https://antcpt.com/score_detector/` | ✅ Token returned |
 | Cloudflare Turnstile | `https://react-turnstile.vercel.app/basic` | ✅ Dummy token returned |
 | reCAPTCHA v2 | `https://www.google.com/recaptcha/api2/demo` | ⚠️ Requires audio challenge (see notes) |
-| hCaptcha | `https://accounts.hcaptcha.com/demo` | ⚠️ Challenge-dependent |
+| hCaptcha | `https://accounts.hcaptcha.com/demo` | ✅ Official test key direct-pass |
 | Image-to-Text | Local base64 image | ✅ Text returned via vision model |
 | Classification | Local base64 grid | ✅ Object indices returned via vision model |
 
@@ -126,11 +126,31 @@ curl -s -X POST http://localhost:8000/createTask \
 
 ### Behavior
 
-The hCaptcha test key (`10000000-ffff-ffff-ffff-000000000001`) is designed to always pass — but headless browsers detected as bots still receive an image challenge. The solver clicks the checkbox iframe and polls for a token for up to 30 seconds.
+The hCaptcha solver now normalizes the official demo URL so that the requested
+`websiteKey` is actually injected as `?sitekey=...&hl=en` before navigation.
+With the official public test key (`10000000-ffff-ffff-ffff-000000000001`), the
+demo returns the documented direct-pass token in headless mode.
+
+We also tested the default public demo widget sitekey
+(`a5f74b19-9e45-40e0-b45d-47ff91b7a6c2`) and observed a different runtime
+branch: a canvas / puzzle challenge with prompt
+`Place the correct puzzle piece into the correct slot to complete the image`.
+That branch is currently outside this project's built-in
+`HCaptchaClassification` grid fallback.
 
 ### Status
 
-⚠️ Checkbox click succeeds. Token issuance depends on hCaptcha's bot detection score. For test environments, using the [HCaptchaClassification](usage/classification.md) task type (direct image classification) is the recommended integration path.
+✅ Verified sanity path with the official public test key:
+
+- `createTask` succeeded for `HCaptchaTaskProxyless`
+- `getTaskResult` returned
+  `solution.gRecaptchaResponse=10000000-aaaa-bbbb-cccc-000000000001`
+- service logs showed `Got hCaptcha token directly after checkbox click`
+
+⚠️ We still do **not** have a public official URL that deterministically forces
+the grid / image-selection branch on every run. For deterministic
+classification-path testing, use your own controlled hCaptcha integration page
+and sitekey. See [hCaptcha usage](usage/hcaptcha.md).
 
 ---
 
@@ -147,5 +167,5 @@ Any base64-encoded image can be sent to `ImageToTextTask`. The vision model retu
 ## What these results mean
 
 - ✅ **reCAPTCHA v3** and **Turnstile** are fully functional and pass in every local test run.
-- ⚠️ **reCAPTCHA v2** and **hCaptcha** browser-based solving is limited by headless browser detection. These captcha types are primarily intended to be integrated with `HCaptchaClassification` / `ReCaptchaV2Classification` task types for image grid solving, or via audio challenge transcription.
+- ⚠️ **reCAPTCHA v2** browser-based solving is still limited by headless browser detection, and **hCaptcha** still has unsupported public branches such as canvas / puzzle challenges. Deterministic hCaptcha grid-path testing currently requires a controlled sitekey/page rather than the public demo.
 - The service is designed as a **backend solver for flow2api** — in practice, real-world integrations extract the image challenge frames and send them to the classification endpoint, rather than relying on full browser automation to pass the widget.
