@@ -81,6 +81,28 @@ _VERIFY_BUTTON_SELECTORS = (
     'button[aria-label*="Verify"]',
 )
 
+_CHECKBOX_SELECTORS = (
+    "#checkbox",
+    '[id="checkbox"]',
+    'div[role="checkbox"]',
+    'input[type="checkbox"]',
+    '.checkbox',
+    '[aria-checked]',
+)
+
+_CHALLENGE_FRAME_HINTS = (
+    "frame=challenge",
+    "challenge",
+    "hcaptcha-inner",
+)
+
+_CHECKBOX_FRAME_HINTS = (
+    "frame=checkbox",
+    "checkbox",
+    "hcaptcha-invisible",
+    "hcaptcha-checkbox",
+)
+
 
 class HCaptchaSolver:
     """Solves ``HCaptchaTaskProxyless`` tasks via Playwright."""
@@ -195,11 +217,14 @@ class HCaptchaSolver:
     async def _click_checkbox(self, page: Page) -> None:
         frame = await self._find_frame(page, "checkbox", wait_seconds=10)
         if frame is None:
-            raise RuntimeError("Could not find hCaptcha checkbox frame")
+            raise RuntimeError(self._build_missing_frame_error(page, "checkbox"))
 
-        checkbox = await frame.query_selector("#checkbox")
+        checkbox = await self._find_checkbox_element(frame)
         if checkbox is None:
-            raise RuntimeError("Could not find hCaptcha checkbox element")
+            raise RuntimeError(
+                "Could not find hCaptcha checkbox element inside frame "
+                f"{getattr(frame, 'url', None) or '<empty>'}"
+            )
 
         await checkbox.click(timeout=10_000)
         log.info("Clicked hCaptcha checkbox")
@@ -217,13 +242,88 @@ class HCaptchaSolver:
         self, page: Page, frame_role: str, *, wait_seconds: int = 5
     ) -> Frame | None:
         attempts = max(1, wait_seconds * 2)
+        main_frame = getattr(page, "main_frame", None)
         for _ in range(attempts):
+            exact_match: Frame | None = None
+            hinted_match: Frame | None = None
+            dom_match: Frame | None = None
             for frame in page.frames:
-                url = frame.url or ""
-                if "hcaptcha" in url and f"frame={frame_role}" in url:
-                    return frame
+                if main_frame is not None and frame is main_frame:
+                    continue
+                url = (frame.url or "").lower()
+                if not self._is_hcaptcha_related_frame(url):
+                    continue
+
+                if frame_role == "checkbox":
+                    if await self._find_checkbox_element(frame) is not None:
+                        dom_match = dom_match or frame
+                    if any(hint in url for hint in _CHECKBOX_FRAME_HINTS):
+                        if "frame=checkbox" in url:
+                            exact_match = exact_match or frame
+                        else:
+                            hinted_match = hinted_match or frame
+                elif frame_role == "challenge":
+                    if await self._is_challenge_frame(frame):
+                        dom_match = dom_match or frame
+                    if any(hint in url for hint in _CHALLENGE_FRAME_HINTS):
+                        if "frame=challenge" in url:
+                            exact_match = exact_match or frame
+                        else:
+                            hinted_match = hinted_match or frame
+
+            if exact_match is not None:
+                return exact_match
+            if dom_match is not None:
+                return dom_match
+            if hinted_match is not None:
+                return hinted_match
             await asyncio.sleep(0.5)
         return None
+
+    @staticmethod
+    def _is_hcaptcha_related_frame(url: str) -> bool:
+        return (
+            "hcaptcha" in url
+            or "newassets.hcaptcha.com" in url
+            or "api.hcaptcha.com" in url
+            or "js.stripe.com/v3/hcaptcha" in url
+        )
+
+    async def _find_checkbox_element(self, frame: Frame) -> ElementHandle[Any] | None:
+        for selector in _CHECKBOX_SELECTORS:
+            element = await frame.query_selector(selector)
+            if element is not None:
+                return element
+        return None
+
+    async def _is_challenge_frame(self, frame: Frame) -> bool:
+        prompt = await frame.evaluate(_QUESTION_JS)
+        if isinstance(prompt, str) and prompt.strip():
+            return True
+
+        for selector in _CHALLENGE_TILE_SELECTORS:
+            elements = await frame.query_selector_all(selector)
+            if elements:
+                return True
+
+        if await frame.locator("canvas").count() > 0:
+            return True
+
+        for selector in _VERIFY_BUTTON_SELECTORS:
+            if await frame.query_selector(selector) is not None:
+                return True
+
+        return False
+
+    @staticmethod
+    def _build_missing_frame_error(page: Page, frame_role: str) -> str:
+        frame_urls = [
+            getattr(frame, "url", None) or "<empty>"
+            for frame in page.frames
+        ]
+        return (
+            f"Could not find hCaptcha {frame_role} frame; available frames={frame_urls}"
+        )
 
     @staticmethod
     def _prepare_target_url(website_url: str, website_key: str) -> str:
